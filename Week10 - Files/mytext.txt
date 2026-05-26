@@ -1,0 +1,3 @@
+Good morning, have a nice day
+The value of the number is 10 
+Hello from fputs
