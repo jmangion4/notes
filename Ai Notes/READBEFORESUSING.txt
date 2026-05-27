@@ -1,0 +1,1 @@
+Try to only use the text files for the ai notes and NOT the pdf files. The pdf files open in chrome which im not sure if they can see. TO BE SAFE, ONLY USE THE TEXT FILES. The c files are ok to use for the class notes.
