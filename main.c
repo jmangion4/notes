@@ -1,29 +1,67 @@
-//gcc main.c shapes.c -o usingshapes.exe -lm
-
 #include <stdio.h>
-#include "shapes.h"
+#include <stdlib.h>
+#include "dogheader.h"
+//to create exe gcc main.c dogheader.c -o dogs.exe
+//to run ./dogs.exe
 
 int main(void) {
 
-    Rectangle door   = { .width = 0.9,  .height = 2.1  };
-    Square    tile   = { .side  = 0.3                   };
-    Circle    wheel  = { .radius = 0.35                 };
-    Triangle  ramp   = { .base = 3.0, .height = 1.5, .side_a = 1.803, .side_b = 3.0 };
-    Cuboid    room   = { .width = 4.0, .height = 2.8, .depth = 5.5 };
-    Sphere    ball   = { .radius = 0.11                 };
-    Cylinder  pipe   = { .radius = 0.05, .height = 2.0  };
-    Cone      funnel = { .radius = 0.08, .height = 0.15 };
+    // open dogData.bin in read binary mode
+    FILE* fp = fopen("dogData.bin", "rb");
+    if (!fp) {
+        printf("Error opening dogData.bin\n");
+        return -1;
+    }
 
-    puts("=== Shape Information ===\n");
+    // create/open mylog.txt in write mode to log useful info
+    FILE* logFile = fopen("mylog.txt", "w");
+    if (!logFile) {
+        printf("Error opening mylog.txt\n");
+        fclose(fp);
+        return -1;
+    }
 
-    print_rect_info(door);      putchar('\n');
-    print_square_info(tile);    putchar('\n');
-    print_circle_info(wheel);   putchar('\n');
-    print_triangle_info(ramp);  putchar('\n');
-    print_cuboid_info(room);    putchar('\n');
-    print_sphere_info(ball);    putchar('\n');
-    print_cylinder_info(pipe);  putchar('\n');
-    print_cone_info(funnel);
+    struct dog rec;   // temporary variable to hold one record at a time
+    int count = 0;    // keeps track of how many records we have read
+    int capacity = 1; // start with space for 1 dog
 
+    // allocate initial memory for 1 dog
+    struct dog* dogs = malloc(capacity * sizeof(struct dog));
+
+    // fread reads one record at a time from the file
+    // it returns 0 when there are no more records (end of file)
+    // so the while loop stops automatically when the file is fully read
+    while (fread(&rec, sizeof(rec), 1, fp)) {
+
+        // if the array is full, double the capacity
+        // doubling is more efficient than adding 1 each time
+        // because realloc is called much less often (1, 2, 4, 8...)
+        if (count == capacity) {
+            capacity = capacity * 2;
+            dogs = realloc(dogs, capacity * sizeof(struct dog));
+        }
+
+        // store the record we just read into the array
+        dogs[count] = rec;
+        count++;  // increment count ready for the next record
+    }
+
+    // log how many records were found in the file
+    fprintf(logFile, "Records found: %d\n\n", count);
+
+    // loop through all dogs in memory and display + log each one
+    for (int i = 0; i < count; i++) {
+        displayDog(dogs[i]);       // print to screen
+        logDog(dogs[i], logFile);  // write to mylog.txt
+    }
+
+    // free the dynamically allocated memory - very important!
+    free(dogs);
+
+    // close both files - very important to avoid losing data
+    fclose(fp);
+    fclose(logFile);
+
+    printf("Done! Check mylog.txt\n");
     return 0;
 }

@@ -1,0 +1,14 @@
+Records found: 3
+
+Chip ID : 1
+Name    : Tommy
+Breed   : Labrador
+
+Chip ID : 2
+Name    : Dobby
+Breed   : GoldenRetriever
+
+Chip ID : 3
+Name    : Fox
+Breed   : Terrier
+
