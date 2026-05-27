@@ -1,14 +1,2 @@
-hello this is a test
-#include <stdio.h>
+insert code below:
 
-// Print function
-void printMessage(char message[]) {
-    printf("%s\n", message);
-}
-
-int main() {
-    printMessage("Hello, world!");
-    return 0;
-}
-
-test
