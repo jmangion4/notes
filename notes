@@ -214,3 +214,101 @@ Out of the options shown, JSON_QUERY() is the only real T-SQL JSON function, but
 
 So for Moodle, best forced answer: iv. JSON_QUERY()
 But the question/options are badly written.
+
+
+
+Fair. These are the next answers.
+
+14. Connect to database
+
+def connect_to_db(server, database):
+    global connection
+    try:
+        connection = pyodbc.connect(f"""
+            DRIVER={{ODBC Driver 17 for SQL Server}};
+            SERVER={server};
+            DATABASE={database};
+            Trusted_Connection=yes;
+        """)
+    except Exception as e:
+        raise(e)
+
+15. Most experienced doctor
+
+def get_most_experienced_doctor():
+    try:
+        cursor = connection.cursor()
+        cursor.execute("""
+            SELECT TOP 1 s.first_name,
+                         s.last_name,
+                         d.years_experience
+            FROM doctors d
+                 JOIN staff s
+                 ON d.staff_id = s.staff_id
+            ORDER BY d.years_experience DESC
+        """)
+        result = cursor.fetchone()
+        print(result)
+    except Exception as e:
+        raise(e)
+    finally:
+        cursor.close()
+
+16. Add staff role
+
+def add_staff_role(conn):
+    try:
+        cursor = conn.cursor()
+        rolename = input("Enter role name: ")
+        basesalary = float(input("Enter base salary: "))
+        requiredlicense = int(input("Enter license required (1/0): "))
+        cursor.execute("""
+            INSERT INTO staff_roles (role_name, base_salary, requires_license)
+            VALUES (?, ?, ?)
+        """, rolename, basesalary, requiredlicense)
+        conn.commit()
+        print("\nStaff role was added successfully.")
+    except Exception as e:
+        raise(e)
+    finally:
+        cursor.close()
+
+17. Menu missing parts
+
+def showMenu(conn):
+    print("\n\nMenu")
+    print("1. Delete doctor")
+    print("2. Exit")
+    action = input("\nChoose an option: ")
+    if action == "1":
+        doctorId = int(input("\nEnter doctor id to delete: "))
+        deleteDoctor(conn, doctorId)
+    elif action == "2":
+        stop(conn)
+
+18. Pending bills JSON
+
+Use this if your SQL editor accepts the VALUE syntax shown in the question.
+
+SELECT JSON_OBJECT(
+    'Pending Payment' VALUE JSON_ARRAYAGG(
+        -- Create JSON object for every patient
+        JSON_OBJECT(
+            'Patient' VALUE p.first_name || ' ' || p.last_name,
+            'Amount Due' VALUE b.total_amount_due,
+            'Amount Paid' VALUE b.amount_paid
+        )
+    )
+) AS pending_payments
+FROM patients p
+     JOIN billing b
+     ON p.patient_id = b.patient_id
+WHERE b.amount_paid < b.total_amount_due;
+
+If your table uses total_amount instead of total_amount_due, change this line:
+
+'Amount Due' VALUE b.total_amount_due,
+
+to:
+
+'Amount Due' VALUE b.total_amount,
