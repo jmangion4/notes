@@ -1,2 +1,175 @@
 insert code below:
 
+/* =========================================================
+   QUESTION TITLE:
+   Pending Payments JSON Query
+
+   QUESTION DESCRIPTION:
+   Prepare a query to retrieve the patients who have pending bills.
+   Display:
+   - Patient Name and Surname
+   - Total Amount Due
+   - Amount Paid
+
+   Convert the result into JSON format as shown in the example.
+   ========================================================= */
+
+-- JSON_OBJECT creates a JSON object for each patient
+-- JSON_ARRAYAGG combines all JSON objects into one JSON array
+
+SELECT JSON_OBJECT(
+    'Pending Payments' VALUE JSON_ARRAYAGG(
+
+        -- Create JSON object for every patient
+        JSON_OBJECT(
+
+            -- Display patient full name
+            'Patient' VALUE p.name || ' ' || p.surname,
+
+            -- Display total amount due
+            'Amount Due' VALUE b.total_amount,
+
+            -- Display amount paid
+            'Amount Paid' VALUE b.amount_paid
+
+        )
+    )
+) AS pending_payments_json
+
+-- Select data from patient table
+FROM patients p
+
+-- Join bills table using patient id
+JOIN bills b
+ON p.patient_id = b.patient_id
+
+-- Only retrieve patients with pending bills
+WHERE b.total_amount > b.amount_paid;
+/* =========================================================
+   QUESTION TITLE:
+   Stored Procedure with Error Handling
+
+   QUESTION DESCRIPTION:
+   Complete the stored procedure AddNewBill.
+
+   Requirements:
+   a) Add appropriate error handling
+   b) If admission_id does not exist in admissions table,
+      throw custom error:
+      Error Number: 50100
+      Message: 'Incorrect admission id'
+   c) Any other errors should throw:
+      Error Number: 50000
+      Message:
+      'Insert failed - ' + original error number
+      + original state + original error message
+   ========================================================= */
+
+CREATE OR ALTER PROC AddNewBill
+(
+    @BillId INT,
+    @admission_id INT,
+    @totalAmount DECIMAL(12,2)
+)
+AS
+BEGIN
+
+    BEGIN TRY
+
+        -- Check if admission_id exists in admissions table
+        IF NOT EXISTS
+        (
+            SELECT 1
+            FROM admissions
+            WHERE admission_id = @admission_id
+        )
+        BEGIN
+
+            -- Throw custom error if admission_id is invalid
+            THROW 50100, 'Incorrect admission id', 1;
+
+        END;
+
+        -- Insert new bill into billing table
+        INSERT INTO billing
+        (
+            bill_id,
+            admission_id,
+            issue_date,
+            total_amount,
+            amount_paid,
+            payment_status,
+            payment_method,
+            notes
+        )
+        VALUES
+        (
+            @BillId,
+            @admission_id,
+            GETDATE(),
+            @totalAmount,
+            0,
+            'Pending',
+            NULL,
+            NULL
+        );
+
+    END TRY
+
+    BEGIN CATCH
+
+        -- Re-throw custom admission error directly
+        IF ERROR_NUMBER() = 50100
+        BEGIN
+            THROW;
+        END;
+
+        -- Throw general insert failure error
+        THROW 50000,
+        'Insert failed - '
+        + CAST(ERROR_NUMBER() AS VARCHAR)
+        + ' '
+        + CAST(ERROR_STATE() AS VARCHAR)
+        + ' '
+        + ERROR_MESSAGE(),
+        1;
+
+    END CATCH
+
+END;
+
+/* =========================================================
+   QUESTION TITLE:
+   Transaction with Snapshot Isolation
+
+   QUESTION DESCRIPTION:
+   Complete the code to add 200 to an existing billing row.
+
+   Requirements:
+   - Make sure the database allows snapshot isolation
+   - Create a specific transaction for this operation
+   - Use snapshot isolation
+   - Add error handling
+   - If successful, save changes using COMMIT
+   - If not successful, revert changes using ROLLBACK
+   ========================================================= */
+
+-- Allow the database to use snapshot isolation
+ALTER DATABASE DP2_A1_2026
+SET ALLOW_SNAPSHOT_ISOLATION ON;
+
+-- Start error handling
+BEGIN TRY
+
+    -- Set this transaction to use snapshot isolation
+    SET TRANSACTION ISOLATION LEVEL SNAPSHOT;
+
+    -- Start the transaction
+    BEGIN TRANSACTION AddPaymentTransaction;
+
+        -- Update the billing row by adding 200 to amount_paid
+        UPDATE billing
+        SET amount_paid = amount_paid + 200
+        WHERE admission_id =
+        (
+            -- Find the correct admission
