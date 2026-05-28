@@ -1,2 +1,275 @@
 insert code below:
+/* =========================
+   QUESTION 1 - utils.h
+   ========================= */
 
+/*
+Question Title:
+Reorganise the program into separate files using the best programming practices.
+
+Question Description:
+The functions must be separate from the main file. Use the name utils for your header file.
+The implementation details of the functions must not be visible to any file that uses them.
+The header file must be safe to include more than once.
+*/
+
+#ifndef UTILS_H
+#define UTILS_H
+
+int countVowels(char* s);
+void reverseString(char* s);
+int isPalindrome(char* s);
+int countWords(char* s);
+
+#endif
+/* =========================
+   QUESTION 1 - utils.c
+   ========================= */
+
+#include <stdio.h>
+#include <string.h>
+#include "utils.h"
+
+// Counts how many vowels are inside the string
+int countVowels(char* s) {
+    int count = 0;
+
+    for (int i = 0; i < strlen(s); i++) {
+        char c = s[i];
+
+        if (c == 'a' || c == 'e' || c == 'i' || c == 'o' || c == 'u' ||
+            c == 'A' || c == 'E' || c == 'I' || c == 'O' || c == 'U') {
+            count++;
+        }
+    }
+
+    return count;
+}
+
+// Reverses the string by swapping characters from both ends
+void reverseString(char* s) {
+    int len = strlen(s);
+
+    for (int i = 0; i < len / 2; i++) {
+        char temp = s[i];
+        s[i] = s[len - 1 - i];
+        s[len - 1 - i] = temp;
+    }
+}
+
+// Checks if the string reads the same forwards and backwards
+int isPalindrome(char* s) {
+    int len = strlen(s);
+
+    for (int i = 0; i < len / 2; i++) {
+        if (s[i] != s[len - 1 - i]) {
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+// Counts the number of words in the string
+int countWords(char* s) {
+    int count = 0;
+    int inWord = 0;
+
+    for (int i = 0; i < strlen(s); i++) {
+        if (s[i] != ' ' && inWord == 0) {
+            inWord = 1;
+            count++;
+        }
+        else if (s[i] == ' ') {
+            inWord = 0;
+        }
+    }
+
+    return count;
+}
+/* =========================
+   QUESTION 1 - main.c
+   ========================= */
+
+#include <stdio.h>
+#include "utils.h"
+
+int main() {
+    char words[5][20] = { "racecar", "hello", "level", "world", "madam" };
+    int count = 5;
+
+    for (int i = 0; i < count; i++) {
+        printf("Word: %s\n", words[i]);
+        printf("Vowels: %d\n", countVowels(words[i]));
+        printf("Word count: %d\n", countWords(words[i]));
+        printf("Is palindrome: %d\n", isPalindrome(words[i]));
+
+        reverseString(words[i]);
+
+        printf("Reversed: %s\n", words[i]);
+        printf("\n");
+    }
+
+    return 0;
+}
+/* =========================
+   GCC COMMAND FOR QUESTION 1
+   =========================
+
+gcc main.c utils.c -o question1.exe
+
+*/
+/* =========================
+
+/* =========================
+   QUESTION 2 - question2.c
+   ========================= */
+
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+/*
+Question Title:
+Develop advanced concepts using subroutines.
+
+Question Description:
+Implement a program in a single file called question2.c to read student records from a binary file
+and use a text file for logging purposes.
+*/
+
+// Define the student structure exactly as required
+struct student {
+    int id;
+    char fullname[50];
+    float mark;
+};
+
+// Displays one student record on the screen
+void displayStudent(struct student s) {
+    printf("ID: %d\n", s.id);
+    printf("Full Name: %s\n", s.fullname);
+    printf("Mark: %.2f\n", s.mark);
+    printf("\n");
+}
+
+// Writes a message to a log file
+int logMessage(char filename[], char message[]) {
+    FILE* file = fopen(filename, "a");
+
+    // If the file could not be opened, return 0
+    if (file == NULL) {
+        return 0;
+    }
+
+    // Write the message to the file
+    fprintf(file, "%s\n", message);
+
+    // Close the file
+    fclose(file);
+
+    // Return 1 to show success
+    return 1;
+}
+
+int main() {
+    FILE* file;
+    struct student tempStudent;
+
+    // Start with a small dynamic list size
+    int listSize = 2;
+
+    // Keeps track of how many students were read
+    int count = 0;
+
+    // Allocate memory for the dynamic student list
+    struct student* students = malloc(listSize * sizeof(struct student));
+
+    // Check if malloc failed
+    if (students == NULL) {
+        logMessage("log.txt", "Memory allocation failed.");
+        return 1;
+    }
+
+    // Open the binary file in read binary mode
+    file = fopen("students.bin", "rb");
+
+    // Check if the binary file failed to open
+    if (file == NULL) {
+        logMessage("log.txt", "Could not open students.bin.");
+        free(students);
+        return 1;
+    }
+
+    // Read student records one by one from the binary file
+    while (fread(&tempStudent, sizeof(struct student), 1, file) == 1) {
+
+        // If the list is full, double the list size
+        if (count == listSize) {
+            listSize = listSize * 2;
+
+            // Reallocate memory with the new doubled size
+            struct student* newList = realloc(students, listSize * sizeof(struct student));
+
+            // Check if realloc failed
+            if (newList == NULL) {
+                logMessage("log.txt", "Memory reallocation failed.");
+                fclose(file);
+                free(students);
+                return 1;
+            }
+
+            // Update students to point to the resized list
+            students = newList;
+        }
+
+        // Store the student record in the dynamic list
+        students[count] = tempStudent;
+
+        // Display the student record on screen
+        displayStudent(students[count]);
+
+        // Increase the number of students read
+        count++;
+    }
+
+    // Close the binary file
+    fclose(file);
+
+    // Create a message showing how many students were read
+    char message[100];
+    sprintf(message, "Number of students read: %d", count);
+
+    // Log the number of students read
+    logMessage("log.txt", message);
+
+    // Free the dynamic memory
+    free(students);
+
+    return 0;
+}
+QUESTION 1 WRITTEN ANSWERS
+
+1. Two reasons why header files are important:
+- Header files allow function declarations to be shared between different source files.
+- Header files help keep the program organised by separating declarations from implementation code.
+
+2. How the files were organised:
+I placed the main program in main.c, the function declarations in utils.h, and the function implementations in utils.c. This keeps the main file cleaner and makes the functions easier to reuse and maintain.
+
+3. Why a header file must be protected against being included more than once:
+A header file must be protected to prevent duplicate declarations and compilation errors if the same header file is included multiple times.
+QUESTION 2 WRITTEN ANSWERS
+
+e. Advantage and disadvantage of using the dynamic collection:
+
+Advantage:
+The dynamic collection can grow while the program is running, so it can store all records even when the number of students is unknown.
+
+Disadvantage:
+Dynamic memory must be managed manually, so malloc, realloc, and free must be used correctly to avoid memory errors.
+
+f. How the full collection issue was solved:
+
+When the collection became full, I doubled the list size using realloc. This created more space for new student records while keeping the records that were already stored.
