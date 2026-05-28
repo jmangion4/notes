@@ -273,3 +273,169 @@ Dynamic memory must be managed manually, so malloc, realloc, and free must be us
 f. How the full collection issue was solved:
 
 When the collection became full, I doubled the list size using realloc. This created more space for new student records while keeping the records that were already stored.
+
+
+
+Paste this into question2.c.
+
+Put students.bin in the same folder as your project/source file. If it says the file cannot open, also try placing it in the same folder as the .exe.
+
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
+#include <stdlib.h>
+/*
+    Question 2: Student Records From Binary File
+    You are required to implement a program in a single file called question2.c
+    to read student records from a binary file and use a text file for logging purposes.
+    The binary file students.bin contains records of students.
+    Use the struct student given in the question.
+*/
+/*
+    a) Define the struct student type at the top of your program
+*/
+struct student
+{
+    int id;
+    char fullname[50];
+    float mark;
+};
+/*
+    b) displayStudent()
+    Accepts a single student record and displays its fields on screen.
+*/
+void displayStudent(struct student s)
+{
+    // display the student id
+    printf("Student ID: %d\n", s.id);
+    // display the student full name
+    printf("Full Name: %s\n", s.fullname);
+    // display the student mark
+    printf("Mark: %.2f\n\n", s.mark);
+}
+/*
+    b) logMessage()
+    Accepts a filename and a message.
+    Opens the text file in append mode.
+    Writes the message to the file.
+    Closes the file.
+    Returns 1 if successful or 0 otherwise.
+*/
+int logMessage(char filename[], char message[])
+{
+    // open the file in append mode
+    FILE* file = fopen(filename, "a");
+    // check if the file did not open
+    if (!file)
+    {
+        printf("Error opening log file.\n");
+        return 0;
+    }
+    // write the message in the log file
+    fprintf(file, "%s\n", message);
+    // close the log file
+    fclose(file);
+    return 1;
+}
+int main(void)
+{
+    /*
+        c) In main, declare a dynamic list of struct student
+        to serve as your collection and allocate memory to it.
+        The number of records in the binary file is not known,
+        so using a normal array is discouraged.
+    */
+    // start with space for 2 students
+    int listSize = 2;
+    // count keeps how many students were read
+    int count = 0;
+    // allocate memory for the dynamic student list
+    struct student* studentList = (struct student*)malloc(listSize * sizeof(struct student));
+    // check if malloc failed
+    if (!studentList)
+    {
+        printf("Not enough memory.\n");
+        logMessage("log.txt", "Malloc error. Not enough memory for student list.");
+        return -1;
+    }
+    /*
+        d) Open the binary file students.bin to read the student records.
+    */
+    // open students.bin in read binary mode
+    FILE* file = fopen("students.bin", "rb");
+    // check if the file did not open
+    if (!file)
+    {
+        printf("Error opening students.bin\n");
+        logMessage("log.txt", "File error. students.bin could not be opened.");
+        // free memory before ending the program
+        free(studentList);
+        return -1;
+    }
+    // temporary student used to read one record at a time
+    struct student s;
+    /*
+        Read the records from students.bin one by one,
+        storing each record in the dynamic collection.
+    */
+    while (fread(&s, sizeof(struct student), 1, file) == 1)
+    {
+        /*
+            Remember that the collection might become full.
+            If it becomes full, double the list size.
+        */
+        if (count == listSize)
+        {
+            // double the size of the list
+            listSize = listSize * 2;
+            // resize the list using realloc
+            struct student* newList = (struct student*)realloc(studentList, listSize * sizeof(struct student));
+            // check if realloc failed
+            if (!newList)
+            {
+                printf("Not enough memory while resizing.\n");
+                logMessage("log.txt", "Realloc error. Student list could not be resized.");
+                // close the binary file
+                fclose(file);
+                // free the old list before ending
+                free(studentList);
+                return -1;
+            }
+            // update studentList to point to the resized memory
+            studentList = newList;
+        }
+        // store the student in the dynamic collection
+        studentList[count] = s;
+        // display the student as it is read
+        displayStudent(s);
+        // increase the number of students read
+        count++;
+    }
+    // close the binary file after reading
+    fclose(file);
+    /*
+        After reading the records, log how many students were read
+        in the log text file log.txt.
+    */
+    // message used to store the final log text
+    char message[100];
+    // create the message with the number of students read
+    sprintf(message, "Number of students read: %d", count);
+    // write the message in log.txt
+    logMessage("log.txt", message);
+    // free the dynamic list from memory
+    free(studentList);
+    return 0;
+}
+/*
+    e) Advantage and disadvantage of using this collection over an array.
+    Advantage:
+    The dynamic collection can grow while reading from the file, so it is not limited
+    to a fixed number of student records.
+    Disadvantage:
+    It needs heap memory and must be resized and freed properly. Memory allocation
+    can also fail.
+    f) How the full collection issue was solved.
+    I checked if count was equal to listSize before storing the next student.
+    If the collection was full, I doubled listSize and used realloc() to resize
+    the dynamic list. This allowed all records from the file to be read and stored.
+*/
