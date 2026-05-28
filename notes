@@ -173,3 +173,44 @@ BEGIN TRY
         WHERE admission_id =
         (
             -- Find the correct admission
+
+
+
+
+
+You sent 9 photos, not 10. Also question 6 is duplicated, so I only see 8 unique questions.
+
+Answers:
+
+1. Improve data quality and reduce redundancy
+    Answer: i. Add foreign key constraints
+2. Directly improve query performance
+    Answer: i. Creating appropriate indexes on frequently queried columns
+3. Correct statement about index selectivity
+    Answer: iv. A high index selectivity ratio makes an index more beneficial
+4. Create non-clustered index on productName
+    Answer: ii.
+
+CREATE INDEX idx_product_productName 
+ON Products(productName);
+
+5. Default isolation level in Microsoft SQL Server
+    Answer: i. READ COMMITTED
+6. Set isolation level for a transaction
+    Answer: iv.
+
+SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+
+7. Access nested JSON property using JSON_VALUE()
+    Answer: iv.
+
+JSON_VALUE(@json, '$.address.city')
+
+8. T-SQL function used to extract a value from a JSON string
+    Correct concept: JSON_VALUE()
+    But your options do not show JSON_VALUE().
+
+Out of the options shown, JSON_QUERY() is the only real T-SQL JSON function, but it extracts JSON objects or arrays, not scalar values.
+
+So for Moodle, best forced answer: iv. JSON_QUERY()
+But the question/options are badly written.
